@@ -107,14 +107,28 @@ export function createOpenApiDocument<
     paths[path][route.method.toLowerCase() as Method] = operation;
   }
 
-  const openApiDoc = createDocument({
-    ...document,
-    openapi: '3.1.0',
-    paths: {
-      ...document.paths,
-      ...paths,
+  const openApiDoc = createDocument(
+    {
+      ...document,
+      openapi: '3.1.0',
+      paths: {
+        ...document.paths,
+        ...paths,
+      },
     },
-  });
+    {
+      override: ({ jsonSchema }) => {
+        // Remove patterns for string types with formats
+        if (
+          jsonSchema.type === 'string' &&
+          jsonSchema.format &&
+          jsonSchema.pattern
+        ) {
+          jsonSchema.pattern = undefined;
+        }
+      },
+    },
+  );
 
   if (addRoute) {
     router.get(routeName, (c) => c.json(openApiDoc, 200));
